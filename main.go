@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -27,9 +28,8 @@ type Table struct {
 	Schema string `json:"schema"`
 }
 
-func main() {
-	fmt.Println("Program Started")
-
+func task() {
+	fmt.Println("Task started")
 	db, err := sql.Open("postgres", buildConnectionString())
 	if err != nil {
 		panic(err)
@@ -37,8 +37,6 @@ func main() {
 	defer db.Close()
 
 	statement := `SELECT schemaname, tablename FROM pg_catalog.pg_tables`
-	// WHERE schemaname != 'pg_catalog'
-	// AND schemaname != 'information_schema';`
 
 	rows, _ := db.Query(statement)
 	defer rows.Close()
@@ -50,5 +48,26 @@ func main() {
 		j, _ := json.Marshal(t)
 		fmt.Println(string(j))
 	}
+	fmt.Println("Task Completed")
+}
 
+func main() {
+	fmt.Println("Program Started")
+	task()
+
+	ticker := time.NewTicker(5 * time.Second)
+	quit := make(chan struct{})
+	// go func() {
+	for {
+		select {
+		case <-ticker.C:
+			task()
+		case <-quit:
+			ticker.Stop()
+			fmt.Println("Gracefully shutdown")
+			return
+		}
+	}
+	// }()
+	// close(quit)
 }
